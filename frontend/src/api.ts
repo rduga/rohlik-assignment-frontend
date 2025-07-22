@@ -41,4 +41,56 @@ export async function updateProduct(id: number, product: Omit<Product, 'id' | 'c
 
 export async function deleteProduct(id: number): Promise<void> {
   await axios.delete(`${API_BASE}/products/${id}`);
+}
+
+export interface OrderItemDto {
+  productId: number;
+  quantity: number;
+}
+
+export interface OrderRequestDto {
+  items: OrderItemDto[];
+}
+
+export interface OrderResponseDto {
+  id: number;
+  createdAt: string;
+  updatedAt: string;
+  items: OrderItemDto[];
+  status: 'RESERVED' | 'PAID' | 'CANCELLED';
+  totalPrice: number;
+}
+
+export interface PaymentRequestDto {
+  paymentMethod: string;
+  paymentDetails: string;
+  amount: number;
+}
+
+export interface PageOrderResponseDto {
+  content: OrderResponseDto[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
+export async function createOrder(order: OrderRequestDto): Promise<OrderResponseDto> {
+  const res = await axios.post(`${API_BASE}/orders`, order);
+  return res.data;
+}
+
+export async function listOrders(page = 0, size = 20): Promise<PageOrderResponseDto> {
+  const res = await axios.get(`${API_BASE}/orders`, { params: { page, size } });
+  return res.data;
+}
+
+export async function payOrder(id: number, payment: PaymentRequestDto): Promise<OrderResponseDto> {
+  const res = await axios.post(`${API_BASE}/orders/${id}/pay`, payment);
+  return res.data;
+}
+
+export async function cancelOrder(id: number): Promise<OrderResponseDto> {
+  const res = await axios.post(`${API_BASE}/orders/${id}/cancel`);
+  return res.data;
 } 

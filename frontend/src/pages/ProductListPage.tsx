@@ -7,6 +7,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ProductForm from '../components/ProductForm';
+import { useBasket } from '../components/BasketContext';
 
 export default function ProductListPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -18,6 +19,8 @@ export default function ProductListPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; } | null>(null);
+
+  const { addToBasket } = useBasket();
 
   const fetchProducts = async (pageNum = 1) => {
     setLoading(true);
@@ -97,6 +100,9 @@ export default function ProductListPage() {
                 <CardActions>
                   <IconButton onClick={() => handleEdit(product)}><EditIcon /></IconButton>
                   <IconButton color="error" onClick={() => setDeleteId(product.id!)}><DeleteIcon /></IconButton>
+                  <Button size="small" variant="outlined" onClick={() => addToBasket(product)}>
+                    Add to Basket
+                  </Button>
                 </CardActions>
               </Card>
             </Grid>
