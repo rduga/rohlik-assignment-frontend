@@ -1,21 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { listOrders, payOrder, cancelOrder } from '../api';
-import type { OrderResponseDto, PaymentRequestDto } from '../api';
-import { Box, Typography, Card, CardContent, CardActions, Button, CircularProgress, Snackbar, Grid } from '@mui/material';
+import { listOrders, payOrder, cancelOrder, getProducts } from '../api';
+import type { OrderResponseDto, PaymentRequestDto, Product } from '../api';
+import { Box, Typography, Button, CircularProgress, Snackbar, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Pagination, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<OrderResponseDto[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [payingId, setPayingId] = useState<number | null>(null);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (pageNum = 1, size = pageSize) => {
     setLoading(true);
     try {
-      const data = await listOrders(0, 20);
+      const data = await listOrders(pageNum - 1, size);
       setOrders(data.content);
+      setTotalPages(data.totalPages);
+      setPage(data.number + 1);
     } catch (e: any) {
       setError(e.message || 'Failed to load orders');
     } finally {
@@ -23,14 +29,24 @@ export default function OrderHistoryPage() {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const data = await getProducts(0, 1000); // get all products
+      setProducts(data.content);
+    } catch {}
+  };
+
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(page, pageSize);
+    // eslint-disable-next-line
+  }, [page, pageSize]);
+  useEffect(() => {
+    fetchProducts();
   }, []);
 
   const handlePay = async (order: OrderResponseDto) => {
     setPayingId(order.id);
     try {
-      // For demo, use dummy payment details
       const payment: PaymentRequestDto = {
         paymentMethod: 'card',
         paymentDetails: '**** **** **** 1234',
@@ -59,42 +75,89 @@ export default function OrderHistoryPage() {
     }
   };
 
+  // Add emoji list and getProductEmoji function for icons
+  const productEmojis = ['🍎', '🍌', '🥦', '🥕', '🍞', '🧀', '🥩', '🍗', '🍪', '🥛', '🍊', '🍇', '🍉', '🍋', '🍆', '🍔', '🍟', '🍕', '🌭', '🥨', '🍿', '🍫', '🍰', '🍯', '🥜', '🍵', '🥤', '🧃', '🧊', '🍶'];
+  function getProductEmoji(id: number | undefined) {
+    if (typeof id !== 'number') return '🛒';
+    return productEmojis[id % productEmojis.length];
+  }
+
+  // Helper to get product name by id
+  const getProductName = (id: number) => products.find(p => p.id === id)?.name || `#${id}`;
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>Order History</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h5">Order History</Typography>
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel id="order-page-size-label">Items per page</InputLabel>
+          <Select
+            labelId="order-page-size-label"
+            value={pageSize}
+            label="Items per page"
+            onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+          >
+            {[5, 10, 20, 50].map(size => (
+              <MenuItem key={size} value={size}>{size}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
       {loading ? <CircularProgress /> : (
-        <Grid container spacing={2} columns={12}>
-          {orders.map(order => (
-            <Grid key={order.id} columns={4}>
-              <Card>
-                <CardContent>
-                  <Typography variant="subtitle1">Order #{order.id}</Typography>
-                  <Typography variant="body2">Status: {order.status}</Typography>
-                  <Typography variant="body2">Total: {order.totalPrice} Kč</Typography>
-                  <Typography variant="body2">Items:</Typography>
-                  <ul>
-                    {order.items.map((item, idx) => (
-                      <li key={idx}>Product #{item.productId} x {item.quantity}</li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardActions>
-                  {order.status === 'RESERVED' && (
-                    <>
-                      <Button size="small" variant="contained" color="success" disabled={payingId === order.id} onClick={() => handlePay(order)}>
-                        {payingId === order.id ? 'Paying...' : 'Pay'}
-                      </Button>
-                      <Button size="small" variant="outlined" color="error" disabled={cancellingId === order.id} onClick={() => handleCancel(order)}>
-                        {cancellingId === order.id ? 'Cancelling...' : 'Cancel'}
-                      </Button>
-                    </>
-                  )}
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Order #</TableCell>
+                <TableCell>Created</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Total (Kč)</TableCell>
+                <TableCell>Items</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {orders.map(order => (
+                <TableRow key={order.id}>
+                  <TableCell>{order.id}</TableCell>
+                  <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
+                  <TableCell>{order.status}</TableCell>
+                  <TableCell>{order.totalPrice}</TableCell>
+                  <TableCell>
+                    <ul style={{ margin: 0, paddingLeft: 0, listStyle: 'none' }}>
+                      {order.items.map((item, idx) => (
+                        <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }} title={`Product ID: ${item.productId}`}>
+                          <span style={{ fontSize: 20 }}>
+                            {getProductEmoji(item.productId)}
+                          </span>
+                          <span>
+                            {getProductName(item.productId)} x {item.quantity} ks
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </TableCell>
+                  <TableCell>
+                    {order.status === 'RESERVED' && (
+                      <>
+                        <Button size="small" variant="contained" color="success" disabled={payingId === order.id} onClick={() => handlePay(order)}>
+                          {payingId === order.id ? 'Paying...' : 'Pay'}
+                        </Button>
+                        <Button size="small" variant="outlined" color="error" disabled={cancellingId === order.id} onClick={() => handleCancel(order)} sx={{ ml: 1 }}>
+                          {cancellingId === order.id ? 'Cancelling...' : 'Cancel'}
+                        </Button>
+                      </>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
+      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+        <Pagination count={totalPages} page={page} onChange={(_, value) => setPage(value)} />
+      </Box>
       <Snackbar open={!!snackbar} autoHideDuration={3000} onClose={() => setSnackbar(null)} message={snackbar} />
       {error && <Snackbar open={!!error} autoHideDuration={4000} onClose={() => setError(null)} message={error} />}
     </Box>

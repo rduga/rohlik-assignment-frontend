@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getProducts, deleteProduct } from '../api';
 import type { Product } from '../api';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Snackbar, Card, CardContent, CardActions, Typography, Pagination, CircularProgress, CardMedia } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Snackbar, Card, CardContent, CardActions, Typography, Pagination, CircularProgress, CardMedia, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -19,13 +19,14 @@ export default function ProductListPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; } | null>(null);
+  const [pageSize, setPageSize] = useState(10);
 
   const { addToBasket } = useBasket();
 
-  const fetchProducts = async (pageNum = 1) => {
+  const fetchProducts = async (pageNum = 1, size = pageSize) => {
     setLoading(true);
     try {
-      const data = await getProducts(pageNum - 1, 10);
+      const data = await getProducts(pageNum - 1, size);
       setProducts(data.content);
       setTotalPages(data.totalPages);
       setPage(data.number + 1);
@@ -37,9 +38,9 @@ export default function ProductListPage() {
   };
 
   useEffect(() => {
-    fetchProducts(page);
+    fetchProducts(page, pageSize);
     // eslint-disable-next-line
-  }, [page]);
+  }, [page, pageSize]);
 
   const handleAdd = () => {
     setEditingProduct(null);
@@ -75,7 +76,22 @@ export default function ProductListPage() {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <h2>Products</h2>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleAdd}>Add Product</Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel id="page-size-label">Items per page</InputLabel>
+            <Select
+              labelId="page-size-label"
+              value={pageSize}
+              label="Items per page"
+              onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+            >
+              {[5, 10, 20, 50].map(size => (
+                <MenuItem key={size} value={size}>{size}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleAdd}>Add Product</Button>
+        </Box>
       </Box>
       {loading ? <CircularProgress /> : (
         <Grid container columnSpacing={3} columns={12}>
