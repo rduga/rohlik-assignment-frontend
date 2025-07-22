@@ -3,7 +3,7 @@
 ## Local Development Instructions
 
 ### Prerequisites
-- Node.js (v18 or newer recommended)
+- Node.js (v22.17.1 or newer recommended)
 - npm (comes with Node.js)
 
 ### Setup & Run
