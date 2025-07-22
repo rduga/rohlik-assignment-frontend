@@ -4,10 +4,14 @@ import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { useBasket } from './BasketContext';
+import { createOrder } from '../api';
 
 export default function BasketDrawer() {
   const [open, setOpen] = useState(false);
   const { items, removeFromBasket, updateQuantity, clearBasket } = useBasket();
+  const [ordering, setOrdering] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   const total = items.reduce((sum, item) => sum + item.product.pricePerUnit * item.quantity, 0);
 
@@ -61,8 +65,26 @@ export default function BasketDrawer() {
           </Box>
           <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
             <Button variant="outlined" color="secondary" onClick={clearBasket} disabled={items.length === 0}>Clear</Button>
-            <Button variant="contained" color="primary" fullWidth disabled={items.length === 0} onClick={() => {/* TODO: create order */}}>Order</Button>
+            <Button variant="contained" color="primary" fullWidth disabled={items.length === 0 || ordering} onClick={async () => {
+              setOrdering(true);
+              setOrderError(null);
+              try {
+                const order = await createOrder({
+                  items: items.map(item => ({ productId: item.product.id!, quantity: item.quantity }))
+                });
+                setOrderSuccess(`Order #${order.id} created!`);
+                clearBasket();
+              } catch (e: any) {
+                setOrderError(e?.response?.data?.message || e.message || 'Order failed');
+              } finally {
+                setOrdering(false);
+              }
+            }}>
+              {ordering ? 'Ordering...' : 'Order'}
+            </Button>
           </Box>
+          {orderSuccess && <Typography color="success.main" sx={{ mt: 2 }}>{orderSuccess}</Typography>}
+          {orderError && <Typography color="error.main" sx={{ mt: 2 }}>{orderError}</Typography>}
         </Box>
       </Drawer>
     </>

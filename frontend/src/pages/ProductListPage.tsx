@@ -100,9 +100,15 @@ export default function ProductListPage() {
                 <CardActions>
                   <IconButton onClick={() => handleEdit(product)}><EditIcon /></IconButton>
                   <IconButton color="error" onClick={() => setDeleteId(product.id!)}><DeleteIcon /></IconButton>
-                  <Button size="small" variant="outlined" onClick={() => addToBasket(product)}>
-                    Add to Basket
-                  </Button>
+                  {product.stockQuantity > 0 ? (
+                    <Button size="small" variant="outlined" onClick={() => addToBasket(product)}>
+                      Add to Basket
+                    </Button>
+                  ) : (
+                    <Button size="small" variant="outlined" disabled>
+                      Out of Stock
+                    </Button>
+                  )}
                 </CardActions>
               </Card>
             </Grid>
