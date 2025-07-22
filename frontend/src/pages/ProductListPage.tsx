@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getProducts, deleteProduct } from '../api';
 import type { Product } from '../api';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Snackbar, Card, CardContent, CardActions, Typography, Pagination, CircularProgress, CardMedia, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Snackbar, Card, CardContent, CardActions, Typography, Pagination, CircularProgress, CardMedia, Select, MenuItem, FormControl, InputLabel, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,8 +20,10 @@ export default function ProductListPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; } | null>(null);
   const [pageSize, setPageSize] = useState(10);
+  // Track quantity for each product
+  const [quantities, setQuantities] = useState<{ [id: number]: number }>({});
 
-  const { addToBasket } = useBasket();
+  const { addToBasket, items: basketItems } = useBasket();
 
   const fetchProducts = async (pageNum = 1, size = pageSize) => {
     setLoading(true);
@@ -117,9 +119,32 @@ export default function ProductListPage() {
                   <IconButton onClick={() => handleEdit(product)}><EditIcon /></IconButton>
                   <IconButton color="error" onClick={() => setDeleteId(product.id!)}><DeleteIcon /></IconButton>
                   {product.stockQuantity > 0 ? (
-                    <Button size="small" variant="outlined" onClick={() => addToBasket(product)}>
-                      Add to Basket
-                    </Button>
+                    (() => {
+                      const inBasket = basketItems.find(i => i.product.id === product.id)?.quantity || 0;
+                      const maxAdd = Math.max(0, product.stockQuantity - inBasket);
+                      return maxAdd > 0 ? (
+                        <>
+                          <TextField
+                            type="number"
+                            size="small"
+                            value={quantities[product.id!] || 1}
+                            onChange={e => {
+                              const val = Math.max(1, Math.min(maxAdd, Number(e.target.value)));
+                              setQuantities(q => ({ ...q, [product.id!]: val }));
+                            }}
+                            inputProps={{ min: 1, max: maxAdd, style: { width: 56 } }}
+                            sx={{ mr: 1 }}
+                          />
+                          <Button size="small" variant="outlined" onClick={() => addToBasket(product, quantities[product.id!] || 1)}>
+                            Add to Basket
+                          </Button>
+                        </>
+                      ) : (
+                        <Button size="small" variant="outlined" disabled>
+                          Out of Stock
+                        </Button>
+                      );
+                    })()
                   ) : (
                     <Button size="small" variant="outlined" disabled>
                       Out of Stock
