@@ -34,6 +34,8 @@ export default function OrderDetailPage() {
       }
     };
     fetchOrder();
+    const interval = setInterval(fetchOrder, 15000);
+    return () => clearInterval(interval);
   }, [id]);
 
   useEffect(() => {

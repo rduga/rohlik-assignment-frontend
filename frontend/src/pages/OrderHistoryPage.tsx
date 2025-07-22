@@ -39,6 +39,10 @@ export default function OrderHistoryPage() {
 
   useEffect(() => {
     fetchOrders(page, pageSize);
+    const interval = setInterval(() => {
+      fetchOrders(page, pageSize);
+    }, 15000);
+    return () => clearInterval(interval);
     // eslint-disable-next-line
   }, [page, pageSize]);
   useEffect(() => {
