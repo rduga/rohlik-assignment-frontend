@@ -19,7 +19,7 @@ export default function OrderHistoryPage() {
   const fetchOrders = async (pageNum = 1, size = pageSize) => {
     setLoading(true);
     try {
-      const data = await listOrders(pageNum - 1, size);
+      const data = await listOrders(pageNum - 1, size, 'id,desc');
       setOrders(data.content);
       setTotalPages(data.totalPages);
       setPage(data.number + 1);
@@ -122,8 +122,11 @@ export default function OrderHistoryPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {orders.map(order => (
-                <TableRow key={order.id}>
+              {orders
+                .slice()
+                .sort((a, b) => b.id - a.id)
+                .map(order => (
+                  <TableRow key={order.id}>
                   <TableCell>
                     <Link component={RouterLink} to={`/orders/${order.id}`} underline="hover">
                       {order.id}

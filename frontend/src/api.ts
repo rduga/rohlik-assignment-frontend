@@ -80,8 +80,10 @@ export async function createOrder(order: OrderRequestDto): Promise<OrderResponse
   return res.data;
 }
 
-export async function listOrders(page = 0, size = 20): Promise<PageOrderResponseDto> {
-  const res = await axios.get(`${API_BASE}/orders`, { params: { page, size } });
+export async function listOrders(page = 0, size = 20, sort?: string): Promise<PageOrderResponseDto> {
+  const params: any = { page, size };
+  if (sort) params.sort = sort;
+  const res = await axios.get(`${API_BASE}/orders`, { params });
   return res.data;
 }
 
