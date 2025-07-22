@@ -59,9 +59,13 @@ export default function ProductListPage() {
     try {
       await deleteProduct(deleteId);
       setSnackbar({ open: true, message: 'Product deleted' });
-      fetchProducts(page);
+      fetchProducts(page, pageSize);
     } catch (e: any) {
-      setSnackbar({ open: true, message: e.message || 'Delete failed' });
+      let msg = e?.message || 'Delete failed';
+      if (e?.response?.status === 400 && e?.response?.data?.message) {
+        msg = e.response.data.message;
+      }
+      setSnackbar({ open: true, message: msg });
     } finally {
       setDeleteId(null);
     }
@@ -96,65 +100,74 @@ export default function ProductListPage() {
         </Box>
       </Box>
       {loading ? <CircularProgress /> : (
-        <Grid container columnSpacing={3} columns={12}>
-          {products.map((product) => (
-            <Grid key={product.id} columns={3}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                {/* Replace CardMedia with emoji icon */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 140, fontSize: 64 }}>
-                  {getProductEmoji(product.id)}
-                </Box>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography gutterBottom variant="h6" component="div">
-                    {product.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Price: {product.pricePerUnit} Kč
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Stock: {product.stockQuantity}
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  <IconButton onClick={() => handleEdit(product)}><EditIcon /></IconButton>
-                  <IconButton color="error" onClick={() => setDeleteId(product.id!)}><DeleteIcon /></IconButton>
-                  {product.stockQuantity > 0 ? (
-                    (() => {
-                      const inBasket = basketItems.find(i => i.product.id === product.id)?.quantity || 0;
-                      const maxAdd = Math.max(0, product.stockQuantity - inBasket);
-                      return maxAdd > 0 ? (
-                        <>
-                          <TextField
-                            type="number"
-                            size="small"
-                            value={quantities[product.id!] || 1}
-                            onChange={e => {
-                              const val = Math.max(1, Math.min(maxAdd, Number(e.target.value)));
-                              setQuantities(q => ({ ...q, [product.id!]: val }));
-                            }}
-                            inputProps={{ min: 1, max: maxAdd, style: { width: 56 } }}
-                            sx={{ mr: 1 }}
-                          />
-                          <Button size="small" variant="outlined" onClick={() => addToBasket(product, quantities[product.id!] || 1)}>
-                            Add to Basket
+        products.length === 0 ? (
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 4, textAlign: 'center' }}>
+            No products available.
+          </Typography>
+        ) : (
+          <Grid container columnSpacing={3} columns={12}>
+            {products.map((product) => (
+              <Grid key={product.id} columns={3}>
+                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  {/* Replace CardMedia with emoji icon */}
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 140, fontSize: 64 }}>
+                    {getProductEmoji(product.id)}
+                  </Box>
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography gutterBottom variant="h6" component="div">
+                      {product.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                      ID: {product.id}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Price: {product.pricePerUnit} Kč
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Stock: {product.stockQuantity}
+                    </Typography>
+                  </CardContent>
+                  <CardActions>
+                    <IconButton onClick={() => handleEdit(product)}><EditIcon /></IconButton>
+                    <IconButton color="error" onClick={() => setDeleteId(product.id!)}><DeleteIcon /></IconButton>
+                    {product.stockQuantity > 0 ? (
+                      (() => {
+                        const inBasket = basketItems.find(i => i.product.id === product.id)?.quantity || 0;
+                        const maxAdd = Math.max(0, product.stockQuantity - inBasket);
+                        return maxAdd > 0 ? (
+                          <>
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={quantities[product.id!] || 1}
+                              onChange={e => {
+                                const val = Math.max(1, Math.min(maxAdd, Number(e.target.value)));
+                                setQuantities(q => ({ ...q, [product.id!]: val }));
+                              }}
+                              inputProps={{ min: 1, max: maxAdd, style: { width: 56 } }}
+                              sx={{ mr: 1 }}
+                            />
+                            <Button size="small" variant="outlined" onClick={() => addToBasket(product, quantities[product.id!] || 1)}>
+                              Add to Basket
+                            </Button>
+                          </>
+                        ) : (
+                          <Button size="small" variant="outlined" disabled>
+                            Out of Stock
                           </Button>
-                        </>
-                      ) : (
-                        <Button size="small" variant="outlined" disabled>
-                          Out of Stock
-                        </Button>
-                      );
-                    })()
-                  ) : (
-                    <Button size="small" variant="outlined" disabled>
-                      Out of Stock
-                    </Button>
-                  )}
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                        );
+                      })()
+                    ) : (
+                      <Button size="small" variant="outlined" disabled>
+                        Out of Stock
+                      </Button>
+                    )}
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )
       )}
       <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
         <Pagination count={totalPages} page={page} onChange={(_, value) => setPage(value)} />

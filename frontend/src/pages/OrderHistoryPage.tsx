@@ -109,63 +109,69 @@ export default function OrderHistoryPage() {
         </FormControl>
       </Box>
       {loading ? <CircularProgress /> : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Order #</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Total (Kč)</TableCell>
-                <TableCell>Items</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {orders
-                .slice()
-                .sort((a, b) => b.id - a.id)
-                .map(order => (
-                  <TableRow key={order.id}>
-                  <TableCell>
-                    <Link component={RouterLink} to={`/orders/${order.id}`} underline="hover">
-                      {order.id}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
-                  <TableCell>{order.status}</TableCell>
-                  <TableCell>{order.totalPrice}</TableCell>
-                  <TableCell>
-                    <ul style={{ margin: 0, paddingLeft: 0, listStyle: 'none' }}>
-                      {order.items.map((item, idx) => (
-                        <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }} title={`Product ID: ${item.productId}`}>
-                          <span style={{ fontSize: 20 }}>
-                            {getProductEmoji(item.productId)}
-                          </span>
-                          <span>
-                            {getProductName(item.productId)} x {item.quantity} ks
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </TableCell>
-                  <TableCell>
-                    {order.status === 'RESERVED' && (
-                      <>
-                        <Button size="small" variant="contained" color="success" disabled={payingId === order.id} onClick={() => handlePay(order)}>
-                          {payingId === order.id ? 'Paying...' : 'Pay'}
-                        </Button>
-                        <Button size="small" variant="outlined" color="error" disabled={cancellingId === order.id} onClick={() => handleCancel(order)} sx={{ ml: 1 }}>
-                          {cancellingId === order.id ? 'Cancelling...' : 'Cancel'}
-                        </Button>
-                      </>
-                    )}
-                  </TableCell>
+        orders.length === 0 ? (
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 4, textAlign: 'center' }}>
+            No orders yet.
+          </Typography>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Order #</TableCell>
+                  <TableCell>Created</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Total (Kč)</TableCell>
+                  <TableCell>Items</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {orders
+                  .slice()
+                  .sort((a, b) => b.id - a.id)
+                  .map(order => (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        <Link component={RouterLink} to={`/orders/${order.id}`} underline="hover">
+                          {order.id}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
+                      <TableCell>{order.status}</TableCell>
+                      <TableCell>{order.totalPrice}</TableCell>
+                      <TableCell>
+                        <ul style={{ margin: 0, paddingLeft: 0, listStyle: 'none' }}>
+                          {order.items.map((item, idx) => (
+                            <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }} title={`Product ID: ${item.productId}`}>
+                              <span style={{ fontSize: 20 }}>
+                                {getProductEmoji(item.productId)}
+                              </span>
+                              <span>
+                                {getProductName(item.productId)} x {item.quantity} ks
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </TableCell>
+                      <TableCell>
+                        {order.status === 'RESERVED' && (
+                          <>
+                            <Button size="small" variant="contained" color="success" disabled={payingId === order.id} onClick={() => handlePay(order)}>
+                              {payingId === order.id ? 'Paying...' : 'Pay'}
+                            </Button>
+                            <Button size="small" variant="outlined" color="error" disabled={cancellingId === order.id} onClick={() => handleCancel(order)} sx={{ ml: 1 }}>
+                              {cancellingId === order.id ? 'Cancelling...' : 'Cancel'}
+                            </Button>
+                          </>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )
       )}
       <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
         <Pagination count={totalPages} page={page} onChange={(_, value) => setPage(value)} />
