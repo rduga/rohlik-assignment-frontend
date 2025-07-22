@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Drawer, Box, IconButton, Typography, List, ListItem, ListItemText, ListItemSecondaryAction, Button, TextField } from '@mui/material';
+import { Drawer, Box, IconButton, Typography, List, ListItem, ListItemText, ListItemSecondaryAction, Button, TextField, Snackbar } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { useBasket } from './BasketContext';
 import { createOrder } from '../api';
+import { useNavigate } from 'react-router-dom';
 
 export default function BasketDrawer() {
   const [open, setOpen] = useState(false);
@@ -12,6 +13,8 @@ export default function BasketDrawer() {
   const [ordering, setOrdering] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [showReservationNotice, setShowReservationNotice] = useState(false);
+  const navigate = useNavigate();
 
   const total = items.reduce((sum, item) => sum + item.product.pricePerUnit * item.quantity, 0);
 
@@ -74,19 +77,30 @@ export default function BasketDrawer() {
                 });
                 setOrderSuccess(`Order #${order.id} created!`);
                 clearBasket();
+                setOpen(false);
+                setShowReservationNotice(true);
+                navigate(`/orders/${order.id}`);
               } catch (e: any) {
                 setOrderError(e?.response?.data?.message || e.message || 'Order failed');
               } finally {
                 setOrdering(false);
               }
             }}>
-              {ordering ? 'Ordering...' : 'Order'}
+              {ordering ? 'Confirming...' : 'Confirm Order'}
             </Button>
           </Box>
           {orderSuccess && <Typography color="success.main" sx={{ mt: 2 }}>{orderSuccess}</Typography>}
           {orderError && <Typography color="error.main" sx={{ mt: 2 }}>{orderError}</Typography>}
         </Box>
       </Drawer>
+      <Snackbar
+        open={showReservationNotice}
+        autoHideDuration={8000}
+        onClose={() => setShowReservationNotice(false)}
+        message={
+          'Order has been created. Products are reserved for 30 minutes. Please pay within this period, otherwise the order will be cancelled.'
+        }
+      />
     </>
   );
 } 

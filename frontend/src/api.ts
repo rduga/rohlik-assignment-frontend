@@ -93,4 +93,9 @@ export async function payOrder(id: number, payment: PaymentRequestDto): Promise<
 export async function cancelOrder(id: number): Promise<OrderResponseDto> {
   const res = await axios.post(`${API_BASE}/orders/${id}/cancel`);
   return res.data;
+}
+
+export async function getOrder(id: number): Promise<OrderResponseDto> {
+  const res = await axios.get(`${API_BASE}/orders/${id}`);
+  return res.data;
 } 

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { listOrders, payOrder, cancelOrder, getProducts } from '../api';
 import type { OrderResponseDto, PaymentRequestDto, Product } from '../api';
-import { Box, Typography, Button, CircularProgress, Snackbar, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Pagination, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Box, Typography, Button, CircularProgress, Snackbar, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Pagination, Select, MenuItem, FormControl, InputLabel, Link } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<OrderResponseDto[]>([]);
@@ -119,7 +120,11 @@ export default function OrderHistoryPage() {
             <TableBody>
               {orders.map(order => (
                 <TableRow key={order.id}>
-                  <TableCell>{order.id}</TableCell>
+                  <TableCell>
+                    <Link component={RouterLink} to={`/orders/${order.id}`} underline="hover">
+                      {order.id}
+                    </Link>
+                  </TableCell>
                   <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
                   <TableCell>{order.status}</TableCell>
                   <TableCell>{order.totalPrice}</TableCell>
